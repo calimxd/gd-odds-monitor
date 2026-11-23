@@ -1,0 +1,28 @@
+name: probe
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet websockets
+      - name: sample
+        run: |
+          mkdir -p data
+          python probe.py 240 >> "data/$(date -u +%Y-%m-%d).jsonl" || true
+      - name: commit
+        run: |
+          git config user.name "odds-monitor"
+          git config user.email "odds-monitor@users.noreply.github.com"
+          git add -A data
+          git commit -m "sample $(date -u +%FT%TZ)" || echo "sin cambios"
+          git push
